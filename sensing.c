@@ -1,16 +1,22 @@
 #include "sensing.h"
 #include "adc.h"
+#include "pins.h"
 
 #define FIELD_CAP_VALUE 450
 #define WILT_POINT_VALUE 700
-enum VWCStat check_vwc(void) {
+#define FLOW_ERR_MARGIN 5
+enum VWCStat check_vwc(enum StateFlags current_state) {
     static uint16_t prev_vwc = 1024;
     enum VWCStat rtn;
     uint16_t vwc = adc_read_vwc();
     // note that the sensor voltage is inversely related to VWC
     if (vwc >= WILT_POINT_VALUE) {
-        if (prev_vwc >= WILT_POINT_VALUE && prev_vwc <= vwc) {
-            rtn = VWC_NOFLOW;
+        if (current_state & VOPEN) {
+            if (vwc > prev_vwc + FLOW_ERR_MARGIN) {
+                rtn = VWC_NOFLOW;
+            } else {
+                rtn = VWC_LOW;
+            }
         } else {
             rtn = VWC_LOW;
         }

@@ -62,7 +62,7 @@ void main (void) {
         if (interrupt_flags & RTC) {
 
             // Check VWC sensor
-            enum VWCStat vwc_status = check_vwc();
+            enum VWCStat vwc_status = check_vwc(state);
             if (vwc_status == VWC_LOW) {
                 // if VWC is low, queue a valve open
                 // it will be opened once light is low
