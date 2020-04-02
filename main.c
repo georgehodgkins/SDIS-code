@@ -52,7 +52,7 @@ void main (void) {
 
     // state flags are managed in the main loop and correspond to status LEDs
     enum StateFlags state = NORMAL;
-
+    close_valve();
     while (1) {
 
         // enter low power mode 3
