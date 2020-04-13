@@ -10,21 +10,9 @@
 //#include "serial.h"
 
 void main (void) {
-    // do not watch the dog
-    WDT_A_hold(WDT_A_BASE);
-
-    // set MCLK and ACLK to use VLO (~10 KHz)
-    // setting MCLK automatically sets SMCLK as well
-    CS_initClockSignal(CS_MCLK, CS_VLOCLK_SELECT, CS_CLOCK_DIVIDER_1);
-    CS_initClockSignal(CS_ACLK, CS_VLOCLK_SELECT, CS_CLOCK_DIVIDER_1);
-
-    // wait for oscillators to stabilize
-    do {
-        // clear fault flags
-        CS_clearFaultFlag(CS_DCOFFG);
-        // wait a bit to see if they reappear
-        __delay_cycles(100);
-    } while (CS_getFaultFlagStatus(CS_DCOFFG));
+    // set up clock system and disable watchdog
+    // THIS MUST BE CALLED AS THE FIRST THING IN main()
+    setup_clocks();
 
     // initialize globals
     init_globals();
