@@ -26,15 +26,33 @@ void setup_serial (void) {
 }
 
 void serial_send_byte (uint8_t data) {
+    while (!serial_transmit_ready()) {}
     EUSCI_A_SPI_transmitData (EUSCI_A0_BASE, data);
 }
 
+void serial_send (uint8_t* data_pt, uint16_t len) {
+    for (uint16_t i = 0, i < len, ++i) {
+        serial_send_byte(data_pt[i]);
+    }
+}
+
+uint8_t serial_transmit_ready (void) {
+    return EUSCI_A_SPI_getInterruptStatus(EUSCI_A0_BASE, EUSCI_A_TRANSMIT_INTERRUPT);
+}
+
+uint8_t serial_response_ready (void) {
+    return EUSCI_A_SPI_getInterruptStatus(EUSCI_A0_BASE, EUSCI_A_RECEIVE_INTERRUPT)
+}
+
 uint8_t serial_get_byte (void) {
+    // wait until response is ready
+    while (!serial_response_ready()) {}
     return EUSCI_A_SPI_receiveData (EUSCI_A0_BASE);
 }
 
 void serial_enable (void) {
     EUSCI_A_SPI_enable(EUSCI_A0_BASE);
+    __delay_cycles(1000);
 }
 
 void serial_disable (void) {
