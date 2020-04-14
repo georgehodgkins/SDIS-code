@@ -1,4 +1,5 @@
 // low-level serial functions
+// TODO: add timeout in case of errors
 #pragma once
 #include "driverlib.h"
 #include "serial.h"
@@ -26,6 +27,7 @@ void setup_serial (void) {
 }
 
 void serial_send_byte (uint8_t data) {
+    // wait until xmit is ready
     while (!serial_transmit_ready()) {}
     EUSCI_A_SPI_transmitData (EUSCI_A0_BASE, data);
 }
@@ -45,9 +47,15 @@ uint8_t serial_response_ready (void) {
 }
 
 uint8_t serial_get_byte (void) {
-    // wait until response is ready
+    // wait for a valid receive
     while (!serial_response_ready()) {}
     return EUSCI_A_SPI_receiveData (EUSCI_A0_BASE);
+}
+
+void serial_get (uint8_t* rxbuf, uint8_t len) {
+    for (int i = 0, i < len, ++i) {
+        rxbuf[i] = serial_get_byte();
+    }
 }
 
 void serial_enable (void) {
