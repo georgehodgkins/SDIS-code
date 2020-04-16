@@ -1,11 +1,12 @@
-#include "driverlib.h"
-#include "globals.h"
-#include "pins.h"
-#include "adc.h"
-#include "rtc.h"
-#include "sensing.h"
-#include "valve.h"
-#include "status.h"
+#include "driverlib.h" // TI driver library
+#include "globals.h" // definition & initialization of global variables
+#include "pins.h" // pin mappings
+#include "adc.h" // low-level ADC methods
+#include "rtc.h" // real-time clock initialization (ISR is defined below main())
+#include "sensing.h" // logic for converting VWC & solar voltages to irrigation decisions
+#include "valve.h" // valve actuation
+#include "status.h" // status LED interface
+// logging/SD card not fully implemented yet
 //#include "logging.h"
 //#include "serial.h"
 
@@ -33,7 +34,7 @@ void main (void) {
      *
      * Enters low-power mode at the beginning of the loop,
      * and returns only when woken by various interrupts.
-     * Interrupt handlers will set a flag and then return to
+     * Interrupt handlers will set a flag (enum defined in pins.h) and then return to
      * the main loop, which checks the flags and deals with them accordingly,
      * then loops back to enter LPM3 again until the next interrupt.
      */
@@ -99,7 +100,7 @@ void main (void) {
 
         update_status_indicators(state);
 
-        // for debug purposes
+        // here for debug purposes
         // if this is removed, make sure to also remove the disable in the ISR below
         RTC_clearInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT_FLAG);
         RTC_enableInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT);
@@ -108,12 +109,14 @@ void main (void) {
 
 
 //-----Interrupt handlers-----
-// These just set flags and then return to the main loop
+// These just wake up, set flags, and then return to the main loop
 #pragma vector=RTC_VECTOR
 __interrupt void RTC_ISR(void) {
     interrupt_flags |= RTC;
     rtc_count++;
+    // interrupt is disabled here because the RTC period is set very short for debugging
+    // and it's unhelpful to have the interrupt triggered before you get to the end of main()
     RTC_disableInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT);
     RTC_clearInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT_FLAG);
-    __low_power_mode_off_on_exit();
+    __low_power_mode_off_on_exit(); // do not go back to sleep
 }

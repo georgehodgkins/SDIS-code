@@ -5,9 +5,10 @@
 
 void init_globals(void);
 
-// when an interrupt is triggered, it will set the appropriate flag and then return to the main loop
+// flags indicating which interrupt was triggered
 enum IntFlags {NONE = 0x00, RTC = 0x01, POWER = 0x02, SERIAL = 0x04};
 
+// current interrupt status read by main loop
 enum IntFlags interrupt_flags;
 
 // counter for RTC rollovers
