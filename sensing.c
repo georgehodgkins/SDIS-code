@@ -1,6 +1,8 @@
+// code to turn solar/VWC values into irrigation decisions
+// algorithms for determining when to open the valve go here
 #include "sensing.h"
-#include "adc.h"
-#include "pins.h"
+#include "adc.h" // functions to get ADC readings
+#include "pins.h" // StateFlags enum definition
 
 #define FIELD_CAP_VALUE 450
 #define WILT_POINT_VALUE 700

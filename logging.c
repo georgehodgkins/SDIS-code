@@ -2,6 +2,7 @@
 #include "driverlib.h"
 #include "logging.h"
 
+// initialize RAM buffer and FRAM to hold log data
 void setup_logging(void) {
     // initialize RAM buffer and counter
     logbuf_pt = 0;
@@ -21,6 +22,7 @@ void setup_logging(void) {
     FRAMCtl_fillMemory32(0, logstore, LOGSTORESIZE);
 }
 
+// write log buffer in RAM to FRAM
 void write_log_buffer (void) {
     // wrap log entries back to the beginning if we run out of nonvolatile store space
     if ((logstore_pt + logbuf_pt) > LOGSTORESIZE) {
@@ -48,6 +50,7 @@ void write_log_buffer (void) {
     }
 }
 
+// store log entry in log
 void log_entry (uint32_t timestamp, uint32_t event) {
     // if buffer is full, dump it to persistent memory first
     // this will also reset the counter

@@ -1,4 +1,5 @@
-#include "driverlib.h"
+// initialization function for pin mappings
+#include "driverlib.h" // TI driver library
 #include "pins.h"
 
 void setup_pins (void) {

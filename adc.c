@@ -1,8 +1,8 @@
-#include "driverlib.h"
-#include "pins.h"
+#include "driverlib.h" // ADC interface functions
+#include "pins.h" // defines for VWCADCIN & SOLARADCIN
 // functions for adc
 
-// this function initializes the ADC to do sample-and-hold on two different channels
+// this function initializes the ADC to do sample-and-hold on a single channel at a time
 void setup_adc (void) {
     // set ADC to be software-triggered, use undivided SMCLK
     ADC_init(ADC_BASE, ADC_SAMPLEHOLDSOURCE_SC, ADC_CLOCKSOURCE_SMCLK, ADC_CLOCKDIVIDER_1);
@@ -15,7 +15,7 @@ void setup_adc (void) {
     ADC_enable(ADC_BASE);
 }
 
-// code to sample ADC, assuming it is already correctly configured
+// sample ADC on currently configured channel
 uint16_t sample_adc (void) {
     // start conversion
     ADC_startConversion(ADC_BASE, ADC_SINGLECHANNEL);
@@ -23,27 +23,29 @@ uint16_t sample_adc (void) {
     // wait for completion
     while (ADC_isBusy(ADC_BASE) == ADC_BUSY) {}
 
-    // store and return result
+    // get and return result
     uint16_t result = ADC_getResults(ADC_BASE);
     return result;
 }
 
+// configure ADC to sample VWC sensor channel, then sample it
 uint16_t adc_read_vwc(void) {
-    // configure ADC to sample A2 (P1.2) and use supply as reference voltage
+    // configure ADC to sample pin VWCADCIN (defined in pins.h) and use supply as reference voltage
     ADC_disableConversions(ADC_BASE,ADC_COMPLETECONVERSION);
     ADC_configureMemory(ADC_BASE, VWCADCIN, ADC_VREFPOS_AVCC, ADC_VREFNEG_AVSS);
 
-    // read and return VWC value
+    // read and return VWC sensor voltage
     uint16_t vwc = sample_adc();
     return vwc;
 }
 
+// configure ADC to sample solar panel voltage channel, then sample it
 uint16_t adc_read_solar(void) {
-    // configure ADC to sample A3 (P1.3) and use supply as voltage reference
+    // configure ADC to sample pin SOLARADCIN (defined in pins.h) and use supply as voltage reference
     ADC_disableConversions(ADC_BASE,ADC_COMPLETECONVERSION);
     ADC_configureMemory(ADC_BASE, SOLARADCIN, ADC_VREFPOS_AVCC, ADC_VREFNEG_AVSS);
 
-    // read and return solar panel voltage
+    // read and return solar panel divider voltage
     uint16_t voltage = sample_adc();
     return voltage;
 }

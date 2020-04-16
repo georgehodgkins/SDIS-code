@@ -1,7 +1,9 @@
+// function for real-time clock initialization
 #include "driverlib.h"
 #include "rtc.h"
 #pragma once
 
+// initialize RTC and start it running with a timeout interrupt
 void setup_rtc(void) {
     // set up RTC to use a 10 kHz clock divided by 1024 (~9.76 Hz)
     // clock is selected by start function below as VLOCLK
@@ -9,6 +11,7 @@ void setup_rtc(void) {
     RTC_init(RTC_BASE, 10, RTC_CLOCKPREDIVIDER_1024);
 
     // enable timeout interrupt on RTC
+    // the ISR is defined in main.c
     RTC_clearInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT_FLAG);
     RTC_enableInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT);
 

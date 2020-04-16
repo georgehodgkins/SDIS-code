@@ -1,5 +1,7 @@
+// this header initializes areas in RAM and FRAM for log data,
+// and declares logging-related functions
 #pragma once
-#include <stdint.h>
+#include <stdint.h> // fixed-width integers
 
 // these values must be multiples of two less than 2^16
 // also consider specific device memory sizes
@@ -23,5 +25,5 @@ uint16_t logstore_pt;
 // initialization function
 void setup_logging(void);
 
-// write logbuf to persistent memory
+// write logbuf in RAM to persistent memory (FRAM)
 void write_log_buffer (void);
