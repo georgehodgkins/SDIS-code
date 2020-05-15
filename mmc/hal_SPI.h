@@ -70,10 +70,10 @@
  #elif SPI_SER_INTF == SER_INTF_USCIB0
  #define halSPIRXBUF  UCB0RXBUF
  #define halSPI_SEND(x) UCB0TXBUF=x
- #define halSPITXREADY  (UC0IFG&UCB0TXIFG)     /* Wait for TX to be ready */
+ #define halSPITXREADY  (UCB0IFG&UCTXIFG0)     /* Wait for TX to be ready */
  #define halSPITXDONE  (UCB0STAT&UCBUSY)       /* Wait for TX to finish */
- #define halSPIRXREADY (UC0IFG&UCB0RXIFG)      /* Wait for TX to be ready */
- #define halSPIRXFG_CLR UC0IFG &= ~UCB0RXIFG
+ #define halSPIRXREADY (UCB0IFG&UCRXIFG0)      /* Wait for TX to be ready */
+ #define halSPIRXFG_CLR UCB0IFG &= ~UCRXIFG0
  #define halSPI_PxIN  SPI_USART0_PxIN
  #define halSPI_SOMI  SPI_USART0_SOMI
 

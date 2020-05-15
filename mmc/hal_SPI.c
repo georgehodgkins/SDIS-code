@@ -112,6 +112,7 @@
 //---------------------------------------------------------------
 #include "hal_SPI.h"
 #include "hal_hardware_board.h"
+#include "driverlib.h"
 
 //#define withDMA
 

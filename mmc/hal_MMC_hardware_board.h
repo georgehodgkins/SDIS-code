@@ -37,43 +37,25 @@
 //  -------------------------------------------------------------
 
 
+#include "pins.h"
+#include "driverlib.h"
 
-#include "msp430x16x.h"              // Adjust this according to the
-                                     // MSP430 device being used.
-// SPI port definitions              // Adjust the values for the chosen
-#define SPI_PxSEL         P5SEL      // interfaces, according to the pin
-#define SPI_PxDIR         P5DIR      // assignments indicated in the
-#define SPI_PxIN          P5IN       // chosen MSP430 device datasheet.
-#define SPI_PxOUT         P5OUT
-#define SPI_SIMO          0x02
-#define SPI_SOMI          0x04
-#define SPI_UCLK          0x08
-
-//----------------------------------------------------------------------------
-// SPI/UART port selections.  Select which port will be used for the interface 
-//----------------------------------------------------------------------------
-//#define SPI_SER_INTF      SER_INTF_USART1  // Interface to MMC
-#define SPI_SER_INTF      SER_INTF_BITBANG  // Interface to MMC
-
-
-/*
-
-#include "msp430x47x4.h"            // Adjust this according to the
-                                     // MSP430 device being used.
-// SPI port definitions              // Adjust the values for the chosen
-#define SPI_PxSEL         P3SEL      // interfaces, according to the pin
-#define SPI_PxDIR         P3DIR      // assignments indicated in the
-#define SPI_PxIN          P3IN       // chosen MSP430 device datasheet.
-#define SPI_PxOUT         P3OUT
-#define SPI_SIMO          0x02
-#define SPI_SOMI          0x04
-#define SPI_UCLK          0x08
+// SPI port definitions
+// Modified for FR2476, see pins.h
+                                           // Adjust the values for the chosen
+#define SPI_PxSEL         SPIPORTSEL      // interfaces, according to the pin
+#define SPI_PxDIR         SPIPORTDIR      // assignments indicated in the
+#define SPI_PxIN          SPIPORTIN       // chosen MSP430 device datasheet.
+#define SPI_PxOUT         SPIPORTOUT
+#define SPI_SIMO          SPISIMOPIN
+#define SPI_SOMI          SPISOMIPIN
+#define SPI_UCLK          SPICLKPIN
 
 //----------------------------------------------------------------------------
 // SPI/UART port selections.  Select which port will be used for the interface 
 //----------------------------------------------------------------------------
 #define SPI_SER_INTF      SER_INTF_USCIB0  // Interface to MMC
-*/
+
 
 
 
@@ -86,27 +68,15 @@
 #define MMC_SOMI          SPI_SOMI
 #define MMC_UCLK          SPI_UCLK
 
-// Chip Select
-#define MMC_CS_PxOUT      P5OUT
-#define MMC_CS_PxDIR      P5DIR
-#define MMC_CS            0x01
+// Chip Select & Card Detect
+// Modified for FR2476, see pins.h
+#define MMC_CS_PxOUT      SDCCSPORTOUT
+#define MMC_CS_PxDIR      SDCCSPORTDIR
+#define MMC_CS            SDCCSPIN
 
-// Card Detect
-#define MMC_CD_PxIN       P5IN
-#define MMC_CD_PxDIR      P5DIR
-#define MMC_CD            0x40
-
-/*
-// Chip Select
-#define MMC_CS_PxOUT      P3OUT
-#define MMC_CS_PxDIR      P3DIR
-#define MMC_CS            0x10
-
-// Card Detect
-#define MMC_CD_PxIN       P3IN
-#define MMC_CD_PxDIR      P3DIR
-#define MMC_CD            0x00
-*/
+#define MMC_CD_PxIN       SDCCDPORTIN
+#define MMC_CD_PxDIR      SDCCDPORTDIR
+#define MMC_CD            SDCCDPIN
 
 #define CS_LOW()    MMC_CS_PxOUT &= ~MMC_CS               // Card Select
 #define CS_HIGH()   while(!halSPITXDONE); MMC_CS_PxOUT |= MMC_CS  // Card Deselect

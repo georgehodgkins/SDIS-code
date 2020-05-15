@@ -73,6 +73,7 @@
 #define _MMCLIB_C
 //
 //---------------------------------------------------------------
+#include "driverlib.h"
 #include "mmc.h"
 #include "hal_SPI.h"
 #include "hal_hardware_board.h"
