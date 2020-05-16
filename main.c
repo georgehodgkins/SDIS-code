@@ -6,6 +6,7 @@
 #include "sensing.h" // logic for converting VWC & solar voltages to irrigation decisions
 #include "valve.h" // valve actuation
 #include "status.h" // status LED interface
+#include "clocks.h"
 // logging/SD card not fully implemented yet
 //#include "logging.h"
 //#include "serial.h"

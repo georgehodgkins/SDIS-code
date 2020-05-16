@@ -16,7 +16,7 @@ enum StateFlags {NORMAL = 0x00, VOPEN = 0x01, VQUEUED = 0x02, FLOW_ERR = 0x04, S
 // SPI interface for SD card, defined as GPIO pins
 #define SPIPORT GPIO_PORT_P1
 // using P1SEL0 is compatible with legacy code which assumes one SEL bit per pin
-// since SPI config is SEL = 0x01
+// since SPI config is SEL = 0b01 i.e. P1SEL0 = 0b1
 #define SPIPORTSEL P1SEL0
 #define SPIPORTDIR P1DIR
 #define SPIPORTIN P1IN
