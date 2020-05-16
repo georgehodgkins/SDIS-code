@@ -26,12 +26,13 @@ enum StateFlags {NORMAL = 0x00, VOPEN = 0x01, VQUEUED = 0x02, FLOW_ERR = 0x04, S
 #define SPISIMOPIN GPIO_PIN2 // controlled by SPI controller
 #define SPISOMIPIN GPIO_PIN3 // controlled by SPI controller
 
-// card detect and chip select for SD card (used by library as GPIO)
+// chip select and card detect for SD card (used by library as GPIO)
 #define SDCCSPORT GPIO_PORT_P1
 #define SDCCSPORTOUT P1OUT
 #define SDCCSPORTDIR P1DIR
 #define SDCCSPIN GPIO_PIN0
 
+// if card detect pin changes, the ISR defined below main() needs to change as well
 #define SDCCDPORT GPIO_PORT_P2
 #define SDCCDPORTIN P2IN
 #define SDCCDPORTDIR P2DIR

@@ -11,9 +11,15 @@ void setup_pins (void) {
     GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN_ALL8);
     GPIO_setAsOutputPin(GPIO_PORT_P6, GPIO_PIN_ALL8);
 
-    // set up SPI
-    GPIO_setAsPeripheralModuleFunctionOutputPin(SPIPORT,
-          SPICLKPIN | SPISIMOPIN | SPISOMIPIN, GPIO_PRIMARY_MODULE_FUNCTION);
+    // set up SPI for SD card
+    // redundant with TI library initialization function
+    // GPIO_setAsPeripheralModuleFunctionOutputPin(SPIPORT,
+    //     SPICLKPIN | SPISIMOPIN | SPISOMIPIN, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    // set up rising edge interrupt on SD card detect pin
+    GPIO_selectInterruptEdge(SDCCDPORT, SDCCDPIN, GPIO_LOW_TO_HIGH_TRANSITION);
+    GPIO_clearInterrupt(SDCCDPORT, SDCCDPIN);
+    GPIO_enableInterrupt(SDCCDPORT, SDCCDPIN);
 
     // set up analog input
     GPIO_setAsPeripheralModuleFunctionInputPin(SENSINGPORT,

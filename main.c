@@ -6,7 +6,7 @@
 #include "sensing.h" // logic for converting VWC & solar voltages to irrigation decisions
 #include "valve.h" // valve actuation
 #include "status.h" // status LED interface
-#include "clocks.h"
+#include "clocks.h" // system clock setup
 // logging/SD card not fully implemented yet
 //#include "logging.h"
 //#include "serial.h"
@@ -28,9 +28,6 @@ void main (void) {
     // set up analog to digital converter
     setup_adc();
 
-    // configure SPI on eUSCI
-    //setup_serial();
-
     /* Main control loop
      *
      * Enters low-power mode at the beginning of the loop,
@@ -47,6 +44,8 @@ void main (void) {
 
         // enter low power mode 3
         __low_power_mode_3();
+
+        // interrupts will return here (if uC is asleep when they trigger)
 
         // RTC flag is set when the RTC times out
         if (interrupt_flags & RTC) {
@@ -95,7 +94,7 @@ void main (void) {
         }
 
         // SERIAL flag is set when an SD card is inserted or removed
-        if (interrupt_flags & SERIAL) {
+        if (interrupt_flags & CARDINSERT) {
             // write data to SD card
         }
 
@@ -111,6 +110,8 @@ void main (void) {
 
 //-----Interrupt handlers-----
 // These just wake up, set flags, and then return to the main loop
+
+// RTC interrupt
 #pragma vector=RTC_VECTOR
 __interrupt void RTC_ISR(void) {
     interrupt_flags |= RTC;
@@ -119,5 +120,16 @@ __interrupt void RTC_ISR(void) {
     // and it's unhelpful to have the interrupt triggered before you get to the end of main()
     RTC_disableInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT);
     RTC_clearInterrupt(RTC_BASE, RTC_OVERFLOW_INTERRUPT_FLAG);
+    __low_power_mode_off_on_exit(); // do not go back to sleep
+}
+
+// SD card detection interrupt
+#pragma vector=PORT2_VECTOR
+__interrupt void SDC_ISR(void) {
+    // this check is redundant for now since this is the only interrupt-enabled pin on P2
+    if (GPIO_getInterruptStatus(SDCCDPORT, SDCCDPIN)) {
+        interrupt_flags |= CARDINSERT;
+        GPIO_clearInterrupt(SDCCDPORT, SDCCDPIN);
+    }
     __low_power_mode_off_on_exit(); // do not go back to sleep
 }
