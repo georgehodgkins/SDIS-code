@@ -1,132 +1,229 @@
-/*-----------------------------------------------------------------------
- * Low level disk I/O module skeleton for Petit FatFs (C)ChaN, 2014
- * Filled in to use TI MMC card hardware interface
- *-----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2019        */
+/*-----------------------------------------------------------------------*/
+/* If a working storage control module is available, it should be        */
+/* attached to the FatFs via a glue function rather than modifying it.   */
+/* This is an example of glue functions to attach various exsisting      */
+/* storage control modules to the FatFs module with a defined API.       */
+/*-----------------------------------------------------------------------*/
 
-#include "diskio.h"
-#include "mmc/mmc.h"
+#include "ff.h"			/* Obtains integer types */
+#include "diskio.h"		/* Declarations of disk functions */
 
-// this should not be > 255
-#define INITIALIZATION_TIMEOUT 200
+/* Definitions of physical drive number for each drive */
+#define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
+#define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
+#define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
 
 /*-----------------------------------------------------------------------*/
-/* Initialize Disk Drive                                                 */
+/* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
 
-// size of currently initialized MMC card
-unsigned long diskio_card_size;
-
-DSTATUS disk_initialize (void)
+DSTATUS disk_status (
+	BYTE pdrv		/* Physical drive nmuber to identify the drive */
+)
 {
-	char card_stat = 0x1;
-	BYTE iter = 0;
-	// try to initialize card
-	while (card_stat != MMC_SUCCESS) {
-	    card_stat = mmcInit();
-	    ++iter;
-	    if (iter == INITIALIZATION_TIMEOUT) {
-	        return STA_NODISK; // initialization timed out
-	    }
+	DSTATUS stat;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		result = RAM_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_MMC :
+		result = MMC_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_USB :
+		result = USB_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
 	}
-
-    // check that interface is stable
-	iter = 0;
-    while (mmcPing() != MMC_SUCCESS) {
-        ++iter;
-        if (iter == INITIALIZATION_TIMEOUT) {
-            return STA_NOINIT; // disk is bad or interface is not stable
-        }
-    }
-
-    // get card size
-    diskio_card_size = mmcReadCardSize();
-
-    // initialization successful
-    return STA_OK;
+	return STA_NOINIT;
 }
 
 
 
 /*-----------------------------------------------------------------------*/
-/* Read Partial Sector
- * 512 byte sectors                                                  */
+/* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_readp (
-	BYTE* buff,		/* Pointer to the destination object */
-	DWORD sector,	/* Sector number (LBA) */
-	UINT offset,	/* Offset in the sector */
-	UINT count		/* Byte count (bit15:destination) */
+DSTATUS disk_initialize (
+	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
 {
-	// check parameters for validity
-    if (offset > 512 || count > (512 - offset) ||
-            sector*512 > diskio_card_size) {
-        return RES_PARERR;
-    }
+	DSTATUS stat;
+	int result;
 
-    // calculate address with offset
-    UINT src_addr = sector*512 + offset;
+	switch (pdrv) {
+	case DEV_RAM :
+		result = RAM_disk_initialize();
 
-    // call MMC library read function
-    char read_stat = mmcReadBlock(src_addr, count, buff);
+		// translate the reslut code here
 
-    // check for read errors
-    if (read_stat != MMC_SUCCESS) {
-        return RES_ERROR;
-    } else {
-        return RES_OK;
-    }
+		return stat;
+
+	case DEV_MMC :
+		result = MMC_disk_initialize();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_USB :
+		result = USB_disk_initialize();
+
+		// translate the reslut code here
+
+		return stat;
+	}
+	return STA_NOINIT;
 }
 
 
 
-/*-----------------------------------------------------------------------
-* Write Partial Sector
- * For each write, the first call sets
- * the destination address on a sector boundary, and subsequent calls write
- * a block each (using read-modify-write if necessary)
- *-----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/* Read Sector(s)                                                        */
+/*-----------------------------------------------------------------------*/
 
-DRESULT disk_writep (
-	BYTE* buff,		/* Pointer to the data to be written, NULL:Initiate/Finalize write operation */
-	DWORD sc		/* Sector number (LBA) or Number of bytes to send */
+DRESULT disk_read (
+	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE *buff,		/* Data buffer to store read data */
+	LBA_t sector,	/* Start sector in LBA */
+	UINT count		/* Number of sectors to read */
 )
 {
-    //
-    static UINT dest_ptr = 0;
+	DRESULT res;
+	int result;
 
-    if (dest_ptr > diskio_card_size) {
-        // might want to reset dest_ptr in here as well
-        return RES_PARERR;
-    }
+	switch (pdrv) {
+	case DEV_RAM :
+		// translate the arguments here
 
-	if (!buff) {
-		if (sc) { // initialization
-            dest_ptr = sc*512;
-            if (dest_ptr > diskio_card_size) {
-                    // might want to reset dest_ptr in here as well
-                    return RES_PARERR;
-            }
-		} else { // finalization
-			dest_ptr = 0;
-		}
-	} else { // block write
-	    if (sc != 512) { // non-aligned write, error
-	        return RES_PARERR;
-	    }
-	    // call MMC lib
-	    char write_stat = mmcWriteBlock(dest_ptr, sc, buff);
+		result = RAM_disk_read(buff, sector, count);
 
-	    // check for errors
-	    if (write_stat != MMC_SUCCESS) {
-	        return RES_ERROR;
-	    }
+		// translate the reslut code here
 
-	    // advance destination pointer
-	    dest_ptr += sc;
+		return res;
+
+	case DEV_MMC :
+		// translate the arguments here
+
+		result = MMC_disk_read(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_USB :
+		// translate the arguments here
+
+		result = USB_disk_read(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
 	}
-	return RES_OK;
+
+	return RES_PARERR;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Write Sector(s)                                                       */
+/*-----------------------------------------------------------------------*/
+
+#if FF_FS_READONLY == 0
+
+DRESULT disk_write (
+	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+	const BYTE *buff,	/* Data to be written */
+	LBA_t sector,		/* Start sector in LBA */
+	UINT count			/* Number of sectors to write */
+)
+{
+	DRESULT res;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		// translate the arguments here
+
+		result = RAM_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_MMC :
+		// translate the arguments here
+
+		result = MMC_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_USB :
+		// translate the arguments here
+
+		result = USB_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+	}
+
+	return RES_PARERR;
+}
+
+#endif
+
+
+/*-----------------------------------------------------------------------*/
+/* Miscellaneous Functions                                               */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_ioctl (
+	BYTE pdrv,		/* Physical drive nmuber (0..) */
+	BYTE cmd,		/* Control code */
+	void *buff		/* Buffer to send/receive control data */
+)
+{
+	DRESULT res;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+
+		// Process of the command for the RAM drive
+
+		return res;
+
+	case DEV_MMC :
+
+		// Process of the command for the MMC/SD card
+
+		return res;
+
+	case DEV_USB :
+
+		// Process of the command the USB drive
+
+		return res;
+	}
+
+	return RES_PARERR;
 }
 
