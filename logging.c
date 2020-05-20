@@ -1,8 +1,18 @@
-#pragma once
 #include "driverlib.h"
 #include "logging.h"
 
-// initialize RAM buffer and FRAM to hold log data
+// define log buffer in RAM
+#pragma NOINIT (logbuf)
+uint8_t logbuf [LOG_BUFSIZE];
+
+// next buffer entry index
+uint16_t logbuf_pt;
+
+// define slab for filesystem in FRAM
+#pragma PERSISTENT(fs_slab)
+uint8_t fs_slab [LOG_SLABSIZE] = {0};
+
+/*// initialize RAM buffer and FRAM to hold log data
 void setup_logging(void) {
     // initialize RAM buffer and counter
     logbuf_pt = 0;
@@ -64,4 +74,4 @@ void log_entry (uint32_t timestamp, uint32_t event) {
 
     // update counter
     logbuf_pt += 2;
-}
+}*/

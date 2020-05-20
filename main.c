@@ -8,7 +8,7 @@
 #include "status.h" // status LED interface
 #include "clocks.h" // system clock setup
 // logging/SD card not fully implemented yet
-//#include "logging.h"
+#include "logging.h"
 //#include "serial.h"
 
 void main (void) {

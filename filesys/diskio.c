@@ -9,11 +9,14 @@
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
+#include "driverlib.h"
+#include "mmc/mmc.h"
+#include "pins.h"
+#include "logging.h"
 
 /* Definitions of physical drive number for each drive */
-#define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
-#define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
-#define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
+#define DEV_FRAM	0	// Map FS in FRAM to drive 0
+#define DEV_MMC		1	// Map external card to drive 1
 
 
 /*-----------------------------------------------------------------------*/
@@ -24,32 +27,29 @@ DSTATUS disk_status (
 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS stat;
-	int result;
-
-	switch (pdrv) {
-	case DEV_RAM :
-		result = RAM_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_MMC :
-		result = MMC_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_USB :
-		result = USB_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-	}
-	return STA_NOINIT;
+    switch(pdrv) {
+    case DEV_FRAM:
+        // FRAM not powered on
+        if (!(GCCTL0 & FRPWR) ||
+                // FRAM broken or not configured correctly
+                FRAMCtl_getInterruptStatus(FRAMCTL_ACCESS_TIME_ERROR_FLAG |
+                                           FRAMCTL_UNCORRECTABLE_BIT_FLAG)) {
+            return STA_NOINIT;
+        } else {
+            return STA_OK;
+        }
+    case DEV_MMC:
+        // check if card detect input is high
+        if (!GPIO_getInputPinValue(SDCCDPORT, SDCCDPIN)) {
+            return STA_NODISK;
+        } else if (mmcGoIdle()) { // non-zero return indicates error
+            return STA_NOINIT;
+        } else {
+            return STA_OK;
+        }
+    default:
+        return STA_NODISK;
+    }
 }
 
 
@@ -62,32 +62,26 @@ DSTATUS disk_initialize (
 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS stat;
-	int result;
-
-	switch (pdrv) {
-	case DEV_RAM :
-		result = RAM_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_MMC :
-		result = MMC_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_USB :
-		result = USB_disk_initialize();
-
-		// translate the reslut code here
-
-		return stat;
+	switch(pdrv) {
+	case DEV_FRAM:
+	    // clear interrupts, then power on
+	    GCCTL0 &= ~(ACCTEIFG | UBDIFG | CBDIFG);
+	    GCCTL0 |= FRPWR;
+	    // wait for a bit, then check status
+	    __delay_cycles(16);
+	    return disk_status(DEV_FRAM);
+	case DEV_MMC:
+	    // check CD pin
+	    if ((!GPIO_getInputPinValue(SDCCDPORT, SDCCDPIN))) {
+	        return STA_NODISK;
+	    } else if (mmcInit()) { // nonzero return indicates error
+	        return STA_NOINIT;
+	    } else {
+	        return STA_OK;
+	    }
+	default:
+	    return STA_NODISK;
 	}
-	return STA_NOINIT;
 }
 
 
@@ -103,39 +97,39 @@ DRESULT disk_read (
 	UINT count		/* Number of sectors to read */
 )
 {
-	DRESULT res;
-	int result;
+    // check that the requested disk exists and is ready
+    if (pdrv > 1) {
+        return RES_PARERR;
+    } else if (disk_status(pdrv)) {
+        return RES_NOTRDY;
+    }
 
-	switch (pdrv) {
-	case DEV_RAM :
-		// translate the arguments here
+    unsigned int i,s; // for loop counters
 
-		result = RAM_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		result = MMC_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_USB :
-		// translate the arguments here
-
-		result = USB_disk_read(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-	}
-
-	return RES_PARERR;
+    switch(pdrv) {
+    case DEV_FRAM:
+        // copy data from FRAM to (presumably) RAM
+        for (s = sector; s < sector + count; ++s) {
+            for (i = 0; i < 512; ++i) {
+                buff[i] = fs_slab[512*s + i];
+            }
+            buff += 512;
+            if (FRAMCtl_getInterruptStatus(FRAMCTL_UNCORRECTABLE_BIT_FLAG)) {
+                return RES_ERROR;
+            }
+        }
+        return RES_OK;
+    case DEV_MMC:
+        for (s = sector; s < sector + count; ++s) {
+            if (mmcReadSector(s, buff)) { // nonzero return indicates error
+                return RES_ERROR;
+            }
+            buff += 512;
+        }
+        return RES_OK;
+    default:
+        return RES_PARERR;
+    }
 }
 
 
@@ -148,44 +142,39 @@ DRESULT disk_read (
 
 DRESULT disk_write (
 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
-	const BYTE *buff,	/* Data to be written */
+	BYTE *buff,	/* Data to be written */
 	LBA_t sector,		/* Start sector in LBA */
 	UINT count			/* Number of sectors to write */
 )
 {
-	DRESULT res;
-	int result;
+    // check that the requested disk exists and is ready
+    if (pdrv > 1) {
+        return RES_PARERR;
+    } else if (disk_status(pdrv)) {
+        return RES_NOTRDY;
+    }
 
-	switch (pdrv) {
-	case DEV_RAM :
-		// translate the arguments here
+    unsigned int s; // for loop counter
 
-		result = RAM_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_MMC :
-		// translate the arguments here
-
-		result = MMC_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-
-	case DEV_USB :
-		// translate the arguments here
-
-		result = USB_disk_write(buff, sector, count);
-
-		// translate the reslut code here
-
-		return res;
-	}
-
-	return RES_PARERR;
+    switch (pdrv) {
+    case DEV_FRAM:
+        for (s = sector; s < sector + count; ++s) {
+            FRAMCtl_write8((uint8_t*) buff, &fs_slab[s*512], 512);
+            if (FRAMCtl_getInterruptStatus(FRAMCTL_UNCORRECTABLE_BIT_FLAG)) {
+                return RES_ERROR;
+            }
+        }
+        return RES_OK;
+    case DEV_MMC:
+        for (s = sector; s < sector + count; ++s) {
+            if (mmcWriteSector(s, (unsigned char*) buff)) { // nonzero return indicates error
+                return RES_ERROR;
+            }
+        }
+        return RES_OK;
+    default:
+        return RES_PARERR;
+    }
 }
 
 #endif
@@ -201,29 +190,57 @@ DRESULT disk_ioctl (
 	void *buff		/* Buffer to send/receive control data */
 )
 {
-	DRESULT res;
-	int result;
+    // check that the requested disk exists and is ready
+    if (pdrv > 1) {
+        return RES_PARERR;
+    } else if (disk_status(pdrv)) {
+        return RES_NOTRDY;
+    }
 
-	switch (pdrv) {
-	case DEV_RAM :
+    // Only the first 5 commands need to be implemented for FatFS
+    switch (pdrv) {
+    case DEV_FRAM:
 
-		// Process of the command for the RAM drive
+        switch (cmd) {
+        case CTRL_SYNC: // complete pending writes, N/A here unless DMA is used
+            return RES_OK;
+        case GET_SECTOR_COUNT: // number of sectors available
+            *((LBA_t*) buff) = LOG_SLABSIZE/512;
+            return RES_OK;
+        case GET_SECTOR_SIZE: // size of a sector in bytes
+            *((WORD*) buff) = 512;
+            return RES_OK;
+        case GET_BLOCK_SIZE: // erase block size (Flash only, return 1)
+            *((DWORD*) buff) = 1;
+            return RES_OK;
+        case CTRL_TRIM: // trim a block of sectors (Flash only)
+            return RES_OK;
+        default: // invalid command
+            return RES_PARERR;
+        }
 
-		return res;
+    case DEV_MMC:
+        // see comments above, considerations are similar
+        switch(cmd) {
+        case CTRL_SYNC:
+            return RES_OK;
+        case GET_SECTOR_COUNT:
+            *((LBA_t*) buff) = mmcReadCardSize()/512; // I...hope this function is denominated in bytes
+            return RES_OK;
+        case GET_SECTOR_SIZE:
+            *((WORD*) buff) = 512;
+            return RES_OK;
+        case GET_BLOCK_SIZE:
+            *((DWORD*) buff) = 1;
+            return RES_OK;
+        case CTRL_TRIM:
+            return RES_OK;
+        default:
+            return RES_PARERR;
+        }
 
-	case DEV_MMC :
-
-		// Process of the command for the MMC/SD card
-
-		return res;
-
-	case DEV_USB :
-
-		// Process of the command the USB drive
-
-		return res;
-	}
-
-	return RES_PARERR;
+    default:
+        return RES_PARERR; // invalid drive ID
+    }
 }
 
