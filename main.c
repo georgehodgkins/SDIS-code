@@ -9,7 +9,6 @@
 #include "clocks.h" // system clock setup
 // logging/SD card not fully implemented yet
 #include "logging.h"
-//#include "serial.h"
 
 void main (void) {
     // set up clock system and disable watchdog
@@ -95,7 +94,7 @@ void main (void) {
 
         // SERIAL flag is set when an SD card is inserted or removed
         if (interrupt_flags & CARDINSERT) {
-            // write data to SD card
+            dump_logstore();
         }
 
         update_status_indicators(state);
