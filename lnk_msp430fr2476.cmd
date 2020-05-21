@@ -130,7 +130,6 @@ SECTIONS
     {
         GROUP(READ_WRITE_MEMORY)
         {
-            .TI.persistent : {}              /* For #pragma persistent            */
             .cio           : {}              /* C I/O Buffer                      */
             .sysmem        : {}              /* Dynamic memory allocation area    */
         } PALIGN(0x0400), RUN_START(fram_rw_start) RUN_END(fram_rx_start)
@@ -152,6 +151,11 @@ SECTIONS
             .text:_isr  : {}                   /* Code ISRs                         */
         }
     } > FRAM
+
+    GROUP (MORE_FRAM)
+    {
+		.TI.persistent : {}              /* For #pragma persistent */
+	} > FRAM2
 
 #ifndef __LARGE_DATA_MODEL__
     .const            : {} > FRAM           /* Constant data                     */
