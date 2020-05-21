@@ -1,6 +1,8 @@
 // function for real-time clock initialization
 #include "driverlib.h"
 #include "rtc.h"
+#include "globals.h"
+#include <stdint.h>
 #pragma once
 
 // initialize RTC and start it running with a timeout interrupt
@@ -17,4 +19,10 @@ void setup_rtc(void) {
 
     // start the RTC
     RTC_start(RTC_BASE, RTC_CLOCKSOURCE_VLOCLK);
+}
+
+
+// get current timestamp
+uint32_t get_timestamp(void) {
+    return (((uint32_t) rtc_count) << 16) | ((uint32_t) RTCCNT);
 }
