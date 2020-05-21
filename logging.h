@@ -6,16 +6,22 @@
 
 // these values must be multiples of four less than 2^16
 // also consider specific device memory sizes
-#define LOG_BUFSIZE 256
-#define LOG_SLABSIZE 8192
+#define LOG_BUFSIZE 128 // sector size divided by 4
+#define LOG_SLABSIZE 16384
 
 // declare buffer and FS slab (defined in logging.c)
-extern uint8_t logbuf[LOG_BUFSIZE];
+extern uint32_t logbuf[LOG_BUFSIZE]; // each entry is 64 bits
 extern uint8_t fs_slab[LOG_SLABSIZE];
 
 // initialization function
-//void setup_logging(void);
+void setup_logging(void);
 
-// write logbuf in RAM to persistent memory (FRAM)
-//void write_log_buffer (void);
+// new log entry
+void log (uint32_t);
+
+// RAM -> FRAM
+void dump_logbuf (void);
+
+// FRAM -> SDC
+void dump_logstore (void);
 #endif
