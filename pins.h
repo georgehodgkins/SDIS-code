@@ -9,7 +9,7 @@ enum StateFlags {NORMAL = 0x00, VOPEN = 0x01, VQUEUED = 0x02, FLOW_ERR = 0x04, S
 #define SENSINGPORT GPIO_PORT_P1
 #define VWCPIN GPIO_PIN6
 #define SOLARPIN GPIO_PIN7
-// analog input pins defined as ADC pins, for ADC functions
+// analog input pins defined as ADC pins, for ADC functionsSTA
 #define VWCADCIN ADC_INPUT_A6
 #define SOLARADCIN ADC_INPUT_A7
 
@@ -36,7 +36,7 @@ enum StateFlags {NORMAL = 0x00, VOPEN = 0x01, VQUEUED = 0x02, FLOW_ERR = 0x04, S
 #define SDCCDPORT GPIO_PORT_P2
 #define SDCCDPORTIN P2IN
 #define SDCCDPORTDIR P2DIR
-#define SDCCDPIN GPIO_PIN6
+#define SDCCDPIN GPIO_PIN7
 
 // pins for valve actuation (digital outputs)
 #define VALVEDRIVEPORT GPIO_PORT_P2
@@ -48,6 +48,7 @@ enum StateFlags {NORMAL = 0x00, VOPEN = 0x01, VQUEUED = 0x02, FLOW_ERR = 0x04, S
 #define VQUEUEDPIN GPIO_PIN2
 #define FLOW_ERRPIN GPIO_PIN4
 #define SENSE_ERRPIN GPIO_PIN5
+#define XFER_STATPIN GPIO_PIN6
 
 // function to configure pins based on the mappings above
 void setup_pins(void);

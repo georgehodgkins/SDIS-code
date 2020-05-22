@@ -132,3 +132,10 @@ __interrupt void SDC_ISR(void) {
     }
     __low_power_mode_off_on_exit(); // do not go back to sleep
 }
+
+// Timer interrupt
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void TA0_ISR (void) {
+    GPIO_toggleOutputOnPin(STATUSPORT, XFER_STATPIN);
+    Timer_A_clearTimerInterrupt(TA0_BASE);
+}

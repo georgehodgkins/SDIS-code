@@ -2,6 +2,7 @@
 #include "logging.h"
 #include "filesys/ff.h"
 #include "rtc.h"
+#include "status.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,6 +58,20 @@ void setup_logging(void) {
     f_getfree("0:", &free_clusters, &fsobj);
     DWORD free_bytes = free_clusters*(fsobj->csize)*512;
     fram_full = (free_bytes < LOG_BUFSIZE) ? 1 : 0;
+
+    // initialize timer module to blink status LED
+    struct Timer_A_initUpModeParam timer_config =
+    {
+        .clockSource = TIMER_A_CLOCKSOURCE_ACLK, // sourced from VLO, ~10 kHz
+        .clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1,
+        .timerClear = TIMER_A_DO_CLEAR,
+        .captureCompareInterruptEnable_CCR0_CCIE = TIMER_A_CCIE_CCR0_INTERRUPT_DISABLE,
+        .timerInterruptEnable_TAIE = TIMER_A_TAIE_INTERRUPT_ENABLE,
+        .timerPeriod = (uint16_t) 5000 // blink period ~.5 sec
+    };
+
+    Timer_A_initUpMode(TA0_BASE, &timer_config);
+
 }
 
 // create a new log entry
@@ -155,9 +170,16 @@ UINT stream_to_mmc(const BYTE* buff, UINT btf) {
 
 // write FRAM data to SD card
 void dump_logstore (void) {
-    FATFS mmc_fs;
+    // set LED to blink
+    set_xfer_LED(XFER_LED_BLINK);
 
-    f_mount(&mmc_fs, "1:/", 1);
+    // mount MMC filesystem -- do not attempt to format if it fails
+    FATFS mmc_fs;
+    if (f_mount(&mmc_fs, "1:/", 1)) { // nonzero return indicates error
+        set_xfer_LED(XFER_LED_OFF);
+        // log error
+        return;
+    }
 
     DIR fram_root; // directory object representing root of FRAM disk
     FILINFO src_info; // found info on files to transfer
@@ -185,7 +207,13 @@ void dump_logstore (void) {
 
         // stream the file from FRAM to SD card
         // streaming function handles opening and closing dest file
-        f_forward(&src_handle, stream_to_mmc, (UINT) src_info.fsize, &unused);
+        if (f_forward(&src_handle, stream_to_mmc, (UINT) src_info.fsize, &unused)) {
+            // nonzero return indicates error, abort
+            set_xfer_LED(XFER_LED_OFF);
+
+            f_close(&src_handle);
+            break;
+        }
 
         // close source file
         f_close(&src_handle);
